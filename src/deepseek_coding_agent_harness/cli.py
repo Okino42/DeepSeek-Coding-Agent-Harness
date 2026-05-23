@@ -1,9 +1,19 @@
 """
-只负责输入输出和聊天状态管理，模型调用放在llm_client里
+CLI entry point for terminal input and output.
 """
 from .config import get_config
-from .core.llm_client import chat
-from .core.engine import create_initial_messages
+from .core.engine import (
+    create_initial_messages,
+    get_help_text,
+    run_turn,
+    should_clear,
+    should_exit,
+    should_show_help,
+    is_empty_input,
+    parse_tool_command,
+    should_run_tool,
+)
+from .tools.registry import run_tool_text
 
 
 def main() -> None:
@@ -13,26 +23,33 @@ def main() -> None:
     while True:
         user_text = input("You> ")
 
-        if user_text == "exit":
+        if is_empty_input(user_text):
+            continue
+
+        if should_exit(user_text):
             break
         
-        if user_text == "/clear":
+        if should_clear(user_text):
             messages = create_initial_messages()
             print("Chat history cleared.")
             continue
+        
+        if should_show_help(user_text):
+            print(f"Assistant> {get_help_text()}")
+            continue
+        
+        if should_run_tool(user_text):
+            try:
+                tool_name, kwargs = parse_tool_command(user_text)
+                result = run_tool_text(tool_name, **kwargs)
+                print(f"Tool> {result}")
+            except Exception as error:
+                print(f"Tool error> {error}")
+            continue
 
-        messages.append({"role": "user", "content": user_text})
-
-        reply = chat(
-            api_key=config["api_key"],
-            base_url=config["base_url"],
-            model=config["model"],
-            messages=messages,
-        )
+        reply = run_turn(config, messages, user_text)
 
         print(f"Assistant> {reply}")
-
-        messages.append({"role": "assistant", "content": reply})
 
 
 if __name__ == "__main__":

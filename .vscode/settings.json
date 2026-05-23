@@ -3,5 +3,6 @@
     "python-envs.defaultPackageManager": "ms-python.python:conda",
     "files.encoding": "utf8",
     "files.autoGuessEncoding": true,
-    "python.terminal.useEnvFile": true
+    "python.terminal.useEnvFile": true,
+    "python.envFile": "${workspaceFolder}/.env"
 }
